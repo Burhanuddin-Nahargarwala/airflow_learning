@@ -2,10 +2,10 @@ import logging
 from datetime import datetime
 import pandas as pd
 
-# from scripts.s3_functions import upload_data_to_s3, fetch_all_files_from_s3
+from scripts.s3_functions import upload_data_to_s3, fetch_all_files_from_s3
 
 # for debugging part
-from s3_functions import upload_data_to_s3, fetch_all_files_from_s3
+# from s3_functions import upload_data_to_s3, fetch_all_files_from_s3
 
 
 # Set up logging
