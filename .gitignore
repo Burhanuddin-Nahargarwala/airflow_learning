@@ -1,0 +1,6 @@
+sql_queries.sql
+rds_credentials.txt
+experiments.ipynb
+csv_to_postgres.py
+__pycache__/
+*.zip
