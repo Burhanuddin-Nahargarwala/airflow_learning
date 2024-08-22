@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 import pandas as pd
 
 from scripts.s3_functions import upload_data_to_s3, fetch_all_files_from_s3
@@ -125,6 +125,72 @@ def customer_rating_analysis():
             avg_rating_by_connection,
             current_date,
         )
+    except Exception as error:
+        logger.error(error)
+
+
+def billing_amount_analysis():
+    try:
+        billing_df = fetch_all_files_from_s3("airflow-destination-data", "billing")
+        billing_df["updated_at"] = pd.to_datetime(billing_df["updated_at"])
+        billing_df = billing_df.sort_values(by="updated_at").drop_duplicates(
+            subset=["billing_id"], keep="last"
+        )
+        customer_rating_df = fetch_all_files_from_s3(
+            "airflow-destination-data", "customer_rating"
+        )
+        customer_rating_df["updated_at"] = pd.to_datetime(
+            customer_rating_df["updated_at"]
+        )
+        customer_rating_df = customer_rating_df.drop_duplicates(keep="last")
+
+        customer_information_df = fetch_all_files_from_s3(
+            "airflow-destination-data",
+            "customer_information"
+        )
+        customer_information_df["updated_at"] = pd.to_datetime(
+            customer_information_df["updated_at"]
+        )
+        customer_information_df = customer_information_df.sort_values(
+            by="updated_at"
+        ).drop_duplicates(subset=["customer_id"], keep="last")
+
+        plans_df = fetch_all_files_from_s3(
+            "airflow-destination-data",
+            "plans"
+        )
+        plans_df["updated_at"] = pd.to_datetime(
+            plans_df["updated_at"]
+        )
+        plans_df = plans_df.sort_values(
+            by="updated_at"
+        ).drop_duplicates(subset=["tier"], keep="last")
+
+        # Merge billing with customer information to get customer details
+        billing_customer = pd.merge(
+            billing_df, customer_information_df, left_on="Customer_Id", right_on="Customer_id"
+        )
+
+        # Merge with plans to get plan details
+        billing_customer_plan = pd.merge(
+            billing_customer, plans_df, left_on="value_segment", right_on="tier"
+        )
+        
+        # Group by plan tier and calculate average billing amount
+        average_billing_by_tier = billing_customer_plan.groupby('tier')['bill_amount'].mean().reset_index()
+        average_billing_by_tier.columns = ['Plan Tier', 'Average Bill Amount']
+
+        # Define the current date
+        current_date = datetime.now()
+
+        # Upload results to S3
+        upload_data_to_s3(
+            "airflow-facts-analyses",
+            "billing_amount_analysis",
+            average_billing_by_tier,
+            current_date,
+        )
+
     except Exception as error:
         logger.error(error)
 
