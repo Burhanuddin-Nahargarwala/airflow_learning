@@ -2,10 +2,10 @@ import logging
 from datetime import datetime
 import pandas as pd
 
-from scripts.s3_functions import upload_data_to_s3, fetch_all_files_from_s3
+# from scripts.s3_functions import upload_data_to_s3, fetch_all_files_from_s3
 
 # for debugging part
-# from s3_functions import upload_data_to_s3, fetch_all_files_from_s3
+from s3_functions import upload_data_to_s3, fetch_all_files_from_s3
 
 
 # Set up logging
@@ -136,13 +136,6 @@ def billing_amount_analysis():
         billing_df = billing_df.sort_values(by="updated_at").drop_duplicates(
             subset=["billing_id"], keep="last"
         )
-        customer_rating_df = fetch_all_files_from_s3(
-            "airflow-destination-data", "customer_rating"
-        )
-        customer_rating_df["updated_at"] = pd.to_datetime(
-            customer_rating_df["updated_at"]
-        )
-        customer_rating_df = customer_rating_df.drop_duplicates(keep="last")
 
         customer_information_df = fetch_all_files_from_s3(
             "airflow-destination-data",
@@ -168,7 +161,7 @@ def billing_amount_analysis():
 
         # Merge billing with customer information to get customer details
         billing_customer = pd.merge(
-            billing_df, customer_information_df, left_on="Customer_Id", right_on="Customer_id"
+            billing_df, customer_information_df, on="customer_id"
         )
 
         # Merge with plans to get plan details
@@ -196,4 +189,4 @@ def billing_amount_analysis():
 
 
 if __name__ == "__main__":
-    customer_rating_analysis()
+    billing_amount_analysis()
