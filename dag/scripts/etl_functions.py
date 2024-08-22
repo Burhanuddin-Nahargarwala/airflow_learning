@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from scripts.s3_functions import upload_data_to_s3, fetch_all_files_from_s3
+
+# for debugging part
 # from s3_functions import upload_data_to_s3, fetch_all_files_from_s3
 
 
@@ -13,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 def late_payment_analysis():
     try:
-        billing_df = fetch_all_files_from_s3(
-            "airflow-destination-data", "billing"  # , primary_key="billing_id"
-        )
+        billing_df = fetch_all_files_from_s3("airflow-destination-data", "billing")
         billing_df["updated_at"] = pd.to_datetime(billing_df["updated_at"])
         billing_df = billing_df.sort_values(by="updated_at").drop_duplicates(
             subset=["billing_id"], keep="last"
@@ -23,7 +23,7 @@ def late_payment_analysis():
 
         customer_information_df = fetch_all_files_from_s3(
             "airflow-destination-data",
-            "customer_information",  # , primary_key="customer_id"
+            "customer_information"
         )
         customer_information_df["updated_at"] = pd.to_datetime(
             customer_information_df["updated_at"]
@@ -77,5 +77,57 @@ def late_payment_analysis():
         )
 
 
-# if __name__ == "__main__":
-#     late_payment_analysis()
+def customer_rating_analysis():
+    try:
+        customer_rating_df = fetch_all_files_from_s3(
+            "airflow-destination-data", "customer_rating"
+        )
+        customer_rating_df["updated_at"] = pd.to_datetime(
+            customer_rating_df["updated_at"]
+        )
+        customer_rating_df = customer_rating_df.drop_duplicates(keep="last")
+
+        customer_information_df = fetch_all_files_from_s3(
+            "airflow-destination-data",
+            "customer_information"
+        )
+        customer_information_df["updated_at"] = pd.to_datetime(
+            customer_information_df["updated_at"]
+        )
+        customer_information_df = customer_information_df.sort_values(
+            by="updated_at"
+        ).drop_duplicates(subset=["customer_id"], keep="last")
+
+        # Merge customer rating with customer information
+        rating_info = pd.merge(
+            customer_rating_df,
+            customer_information_df,
+            on="customer_id"
+        )
+
+        # Calculate average rating by connection type
+        avg_rating_by_connection = (
+            rating_info.groupby("connection_type")["rating"].mean().reset_index()
+        )
+        avg_rating_by_connection.columns = ["Connection Type", "Average Rating"]
+
+        logger.info(
+            avg_rating_by_connection.head(10)
+        )
+
+        # Define the current date
+        current_date = datetime.now()
+
+        # Upload results to S3
+        upload_data_to_s3(
+            "airflow-facts-analyses",
+            "customer_rating_analyses",
+            avg_rating_by_connection,
+            current_date,
+        )
+    except Exception as error:
+        logger.error(error)
+
+
+if __name__ == "__main__":
+    customer_rating_analysis()
