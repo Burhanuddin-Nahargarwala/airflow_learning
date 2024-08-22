@@ -4,7 +4,11 @@ from datetime import datetime
 import logging
 from airflow.models import Variable
 from scripts.incremental_backup import incremental_etl
-from scripts.etl_functions import late_payment_analysis, customer_rating_analysis
+from scripts.etl_functions import (
+    late_payment_analysis,
+    customer_rating_analysis,
+    billing_amount_analysis,
+)
 
 
 logging.basicConfig(level=logging.INFO)
@@ -61,6 +65,7 @@ with DAG(
         op_args=["customer_rating", DESTINATION_BUCKET, POSTGRESQL_CONFIG],
     )
 
+    ## Factual Tasks
     late_payment_analysis_task = PythonOperator(
         task_id=f"late_payment_analysis", python_callable=late_payment_analysis
     )
@@ -69,8 +74,14 @@ with DAG(
         task_id=f"customer_rating_analysis", python_callable=customer_rating_analysis
     )
 
+    billing_amount_analysis_task = PythonOperator(
+        task_id=f"billing_amount_analysis", python_callable=billing_amount_analysis
+    )
+
     # Define task dependencies
     customer_information >> [billing, device_information, customer_rating]
-    plans
+    plans >> billing_amount_analysis
+    customer_information >> billing_amount_analysis
     billing >> late_payment_analysis_task
     customer_rating >> customer_rating_analysis_task
+
