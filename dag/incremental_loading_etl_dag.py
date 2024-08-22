@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 # PostgreSQL connection parameters
 POSTGRESQL_CONFIG = {
-    "host": "telecom.c2b3frbss0vu.ap-south-1.rds.amazonaws.com",
-    "user": "postgres",
-    "password": "Telecom_Airflow123",
-    "database": "wetelco_telecom",
+    "host": Variable.get("HOST"),
+    "user": Variable.get("USER"),
+    "password": Variable.get("PASSWORD"),
+    "database": Variable.get("DB_NAME"),
     "port": 5432,
 }
 
