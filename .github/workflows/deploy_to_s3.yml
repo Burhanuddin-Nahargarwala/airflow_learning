@@ -22,9 +22,9 @@ jobs:
 
     - name: Sync DAGs to S3
       run: |
-        aws s3 sync ./dags s3://mskl-airflow-bucket/dags/
-        # aws s3 sync ./plugins s3://mskl-airflow-bucket/plugins/
-        aws s3 sync ./scripts s3://mskl-airflow-bucket/scripts/
+        aws s3 sync ./dag s3://mskl-airflow-bucket/DAG/
+        # aws s3 sync ./dag/plugins s3://mskl-airflow-bucket/DAG/plugins/
+        aws s3 sync ./dag/scripts s3://mskl-airflow-bucket/DAG/scripts/
 
     # Copy requirements.txt to the root of the S3 bucket
     - name: Sync requirements.txt to S3
