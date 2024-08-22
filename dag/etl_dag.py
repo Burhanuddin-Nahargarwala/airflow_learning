@@ -80,8 +80,8 @@ with DAG(
 
     # Define task dependencies
     customer_information >> [billing, device_information, customer_rating]
-    plans >> billing_amount_analysis
-    customer_information >> billing_amount_analysis
+    plans >> billing_amount_analysis_task
+    customer_information >> billing_amount_analysis_task
     billing >> late_payment_analysis_task
     customer_rating >> customer_rating_analysis_task
 
