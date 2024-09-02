@@ -8,7 +8,6 @@ from scripts.db_functions import (
 )
 from datetime import datetime
 from scripts.s3_functions import upload_data_to_s3
-import pytz
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -33,13 +32,7 @@ def incremental_etl(table_name: str, destination_path: str, conn_params: dict):
 
         # Step 2: Fetch new data
         new_data = fetch_new_data(conn, table_name, last_run_date)
-        current_date_utc = datetime.now(pytz.utc)
-
-        # Convert the current time to IST
-        ist_timezone = pytz.timezone('Asia/Kolkata')
-        current_date = current_date_utc.astimezone(ist_timezone)
-        current_date = current_date.replace(tzinfo=None)
-        print("Current date and time in IST:", current_date)
+        current_date = datetime.now()
         if new_data.empty:
             if run_date_insert_flag:
                 insert_last_run_date(conn, current_date, table_name)
@@ -63,6 +56,3 @@ def incremental_etl(table_name: str, destination_path: str, conn_params: dict):
     finally:
         if conn:
             conn.close()
-
-# if __name__=="__main__":
-#     incremental_etl("customer_information", "airflow-destination-data/burhan", POSTGRESQL_CONFIG)

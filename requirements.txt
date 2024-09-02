@@ -1,5 +1,7 @@
 pandas
 boto3
 apache-airflow-providers-amazon
+apache-airflow-providers-postgres
 psycopg2-binary
 pandas
+pendulum

@@ -3,8 +3,6 @@ from datetime import datetime
 import pandas as pd
 
 from scripts.s3_functions import upload_data_to_s3, fetch_all_files_from_s3
-
-# for debugging part
 # from s3_functions import upload_data_to_s3, fetch_all_files_from_s3
 
 
@@ -13,16 +11,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def late_payment_analysis():
+def late_payment_aggregated_view(destination_path:str, aggregated_view_path: str):
     try:
-        billing_df = fetch_all_files_from_s3("airflow-destination-data", "billing")
+        billing_df = fetch_all_files_from_s3(destination_path, "billing")
         billing_df["updated_at"] = pd.to_datetime(billing_df["updated_at"])
         billing_df = billing_df.sort_values(by="updated_at").drop_duplicates(
             subset=["billing_id"], keep="last"
         )
 
         customer_information_df = fetch_all_files_from_s3(
-            "airflow-destination-data",
+            destination_path,
             "customer_information"
         )
         customer_information_df["updated_at"] = pd.to_datetime(
@@ -65,7 +63,7 @@ def late_payment_analysis():
 
         # Upload results to S3
         upload_data_to_s3(
-            "airflow-facts-analyses",
+            aggregated_view_path,
             "late_payment_analyses",
             late_payment_counts_sorted,
             current_date,
@@ -76,11 +74,10 @@ def late_payment_analysis():
             f"Billing data is not available, so average bill amount fact analyses can't be performed"
         )
 
-
-def customer_rating_analysis():
+def customer_rating_aggregated_view(destination_path:str, s3_key: str):
     try:
         customer_rating_df = fetch_all_files_from_s3(
-            "airflow-destination-data", "customer_rating"
+            destination_path, "customer_rating"
         )
         customer_rating_df["updated_at"] = pd.to_datetime(
             customer_rating_df["updated_at"]
@@ -88,7 +85,7 @@ def customer_rating_analysis():
         customer_rating_df = customer_rating_df.drop_duplicates(keep="last")
 
         customer_information_df = fetch_all_files_from_s3(
-            "airflow-destination-data",
+            destination_path,
             "customer_information"
         )
         customer_information_df["updated_at"] = pd.to_datetime(
@@ -120,7 +117,7 @@ def customer_rating_analysis():
 
         # Upload results to S3
         upload_data_to_s3(
-            "airflow-facts-analyses",
+            s3_key,
             "customer_rating_analyses",
             avg_rating_by_connection,
             current_date,
@@ -129,16 +126,16 @@ def customer_rating_analysis():
         logger.error(error)
 
 
-def billing_amount_analysis():
+def billing_amount_aggregated_view(destination_path:str, s3_key: str):
     try:
-        billing_df = fetch_all_files_from_s3("airflow-destination-data", "billing")
+        billing_df = fetch_all_files_from_s3(destination_path, "billing")
         billing_df["updated_at"] = pd.to_datetime(billing_df["updated_at"])
         billing_df = billing_df.sort_values(by="updated_at").drop_duplicates(
             subset=["billing_id"], keep="last"
         )
 
         customer_information_df = fetch_all_files_from_s3(
-            "airflow-destination-data",
+            destination_path,
             "customer_information"
         )
         customer_information_df["updated_at"] = pd.to_datetime(
@@ -149,7 +146,7 @@ def billing_amount_analysis():
         ).drop_duplicates(subset=["customer_id"], keep="last")
 
         plans_df = fetch_all_files_from_s3(
-            "airflow-destination-data",
+            destination_path,
             "plans"
         )
         plans_df["updated_at"] = pd.to_datetime(
@@ -178,7 +175,7 @@ def billing_amount_analysis():
 
         # Upload results to S3
         upload_data_to_s3(
-            "airflow-facts-analyses",
+            s3_key,
             "billing_amount_analysis",
             average_billing_by_tier,
             current_date,
@@ -186,7 +183,3 @@ def billing_amount_analysis():
 
     except Exception as error:
         logger.error(error)
-
-
-if __name__ == "__main__":
-    billing_amount_analysis()
