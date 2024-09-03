@@ -5,3 +5,4 @@ csv_to_postgres.py
 __pycache__/
 *.zip
 venv/
+customer_information_insert_records.py
